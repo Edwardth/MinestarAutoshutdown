@@ -1,0 +1,4 @@
+name: MinestarAutoshutdown
+main: de.minestar.MinestarAutoshutdown.Core
+version: ${pom.version}
+depend: [MineStarLibrary]
