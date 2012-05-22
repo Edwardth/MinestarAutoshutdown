@@ -35,11 +35,16 @@ import de.minestar.minestarlibrary.utils.ConsoleUtils;
 public class Core extends AbstractCore {
 
     public static final String NAME = "MinestarAutoshutdown";
+    
     private MinestarConfig config;
     private AutoshutdownTask autoshutdownTask;
     private Timer timer;
     private final Pattern pattern = Pattern.compile("(^[01]?[0-9]:[0-5]?[0-9]$)|(^2[0-3]:[0-5]?[0-9]$)");
 
+    public Core() {
+        super(NAME);
+    }
+    
     @Override
     protected boolean createThreads() {
         config = loadConfig();
