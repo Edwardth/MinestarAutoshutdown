@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Timer;
+import java.util.regex.Pattern;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -37,7 +38,7 @@ public class Core extends AbstractCore {
     private AutoshutdownTask autoshutdownTask;
     private Timer timer;
     public static String NAME;
-    private final String regexp_time = "(^[01]?[0-9]:[0-5]?[0-9]$)|(^2[0-3]:[0-5]?[0-9]$)";
+    private final Pattern pattern = Pattern.compile("(^[01]?[0-9]:[0-5]?[0-9]$)|(^2[0-3]:[0-5]?[0-9]$)");
 
     public Core() {
         this("MinestarAutoshutdown");
@@ -100,11 +101,11 @@ public class Core extends AbstractCore {
                 config.save(configFile);
             }
             config.load(configFile);
-            if (!config.getString("downtime1").matches(regexp_time))
+            if (!pattern.matcher(config.getString("downtime1")).matches())
                 ConsoleUtils.printWarning(NAME, "Incorect downtime1! Please edit the Config.");
-            if (!config.getString("downtime2").matches(regexp_time))
+            if (!pattern.matcher(config.getString("downtime2")).matches())
                 ConsoleUtils.printWarning(NAME, "Incorect downtime2! Please edit the Config.");
-            if (!config.getString("downtime3").matches(regexp_time))
+            if (!pattern.matcher(config.getString("downtime3")).matches())
                 ConsoleUtils.printWarning(NAME, "Incorect downtime3! Please edit the Config.");
         } catch (Exception e) {
             ConsoleUtils.printException(e, NAME, "Can't load configuration file!");
