@@ -1,0 +1,5 @@
+VERSION: ${pom.version}
+downtime1: '00:00'
+downtime2: '08:00'
+downtime3: '16:00'
+warning: 5

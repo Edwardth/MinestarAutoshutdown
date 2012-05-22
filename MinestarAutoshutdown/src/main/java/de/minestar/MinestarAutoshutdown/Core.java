@@ -26,32 +26,25 @@ import java.util.Calendar;
 import java.util.Timer;
 import java.util.regex.Pattern;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-
 import de.minestar.MinestarAutoshutdown.utils.AutoshutdownTask;
 import de.minestar.minestarlibrary.AbstractCore;
+import de.minestar.minestarlibrary.config.MinestarConfig;
 import de.minestar.minestarlibrary.utils.ConsoleUtils;
 
 public class Core extends AbstractCore {
 
-    private YamlConfiguration config;
+    public static final String NAME = "MinestarAutoshutdown";
+    private MinestarConfig config;
     private AutoshutdownTask autoshutdownTask;
     private Timer timer;
-    public static String NAME;
     private final Pattern pattern = Pattern.compile("(^[01]?[0-9]:[0-5]?[0-9]$)|(^2[0-3]:[0-5]?[0-9]$)");
-
-    public Core() {
-        this("MinestarAutoshutdown");
-    }
-
-    public Core(String name) {
-        super(name);
-        NAME = name;
-        config = checkConfig(getDataFolder());
-    }
 
     @Override
     protected boolean createThreads() {
+        config = loadConfig();
+        if(!checkConfig()) {
+            return false;
+        }
         autoshutdownTask = new AutoshutdownTask(config.getInt("warning", 5));
         timer = new Timer();
         Calendar now = Calendar.getInstance();
@@ -85,31 +78,30 @@ public class Core extends AbstractCore {
         return true;
     }
 
-    private YamlConfiguration checkConfig(File dataFolder) {
-        YamlConfiguration config = null;
+    public MinestarConfig loadConfig() {
+        File configFile = new File(getDataFolder(), "config.yml");
         try {
-            File configFile = new File(dataFolder, "autoshutdown_config.yml");
-            config = new YamlConfiguration();
+            // copy default one from .jar
             if (!configFile.exists()) {
-                configFile.createNewFile();
-                ConsoleUtils.printWarning(NAME, "Can't find config.yml. Plugin creates a default configuration and uses the default values.");
-                config.load(configFile);
-                config.set("downtime1", "15:00");
-                config.set("downtime2", "15:30");
-                config.set("downtime3", "16:00");
-                config.set("warning", 5);
-                config.save(configFile);
+                ConsoleUtils.printWarning(NAME, "Can't find " + configFile + ", creating a default configuration");
+                MinestarConfig.copyDefault(this.getClass().getResourceAsStream("/config.yml"), configFile);
             }
-            config.load(configFile);
-            if (!pattern.matcher(config.getString("downtime1")).matches())
-                ConsoleUtils.printWarning(NAME, "Incorect downtime1! Please edit the Config.");
-            if (!pattern.matcher(config.getString("downtime2")).matches())
-                ConsoleUtils.printWarning(NAME, "Incorect downtime2! Please edit the Config.");
-            if (!pattern.matcher(config.getString("downtime3")).matches())
-                ConsoleUtils.printWarning(NAME, "Incorect downtime3! Please edit the Config.");
+            // load config and check version tag
+            return new MinestarConfig(configFile, NAME, getDescription().getVersion());
         } catch (Exception e) {
             ConsoleUtils.printException(e, NAME, "Can't load configuration file!");
+            return null;
         }
-        return config;
+    }
+
+    public boolean checkConfig() {
+        boolean errorFree = true;
+        for (int i = 1; i <= 3; i++) {
+            if (!pattern.matcher(config.getString("downtime" + i)).matches()) {
+                ConsoleUtils.printWarning(NAME, "Incorect downtime" + i + "! Please edit the Config.");
+                errorFree = false;
+            }
+        }
+        return errorFree;
     }
 }

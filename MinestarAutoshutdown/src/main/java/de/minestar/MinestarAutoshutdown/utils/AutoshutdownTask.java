@@ -23,7 +23,7 @@ import java.util.TimerTask;
 import org.bukkit.Bukkit;
 
 public class AutoshutdownTask extends TimerTask {
-    private Boolean warned = false;
+    private boolean warned = false;
     private int delay;
 
     public AutoshutdownTask(int delay) {
