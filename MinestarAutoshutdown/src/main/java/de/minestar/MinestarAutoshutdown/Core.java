@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Timer;
 import java.util.regex.Pattern;
 
@@ -42,39 +43,11 @@ public class Core extends AbstractCore {
     @Override
     protected boolean createThreads() {
         config = loadConfig();
-        if(!checkConfig()) {
+        if (!checkConfig())
             return false;
-        }
         autoshutdownTask = new AutoshutdownTask(config.getInt("warning", 5));
         timer = new Timer();
-        Calendar now = Calendar.getInstance();
-        SimpleDateFormat sdf;
-        Calendar[] time = new Calendar[3];
-        for (int i = 1; i <= 3; i++) {
-            String tmp = config.getString("downtime" + i, "00:00");
-            try {
-                sdf = new SimpleDateFormat("hh:mm");
-                sdf.parse(tmp);
-                time[i - 1] = sdf.getCalendar();
-                time[i - 1].set(Calendar.YEAR, now.get(Calendar.YEAR));
-                time[i - 1].set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR));
-                time[i - 1].add(Calendar.MINUTE, -config.getInt("warning", 5));
-            } catch (ParseException e) {
-                ConsoleUtils.printException(e, NAME, "Unable to parse Time");
-            }
-        }
-        Arrays.sort(time);
-        for (int i = 0; i < 3; i++) {
-            if (time[i].after(Calendar.getInstance())) {
-                timer.scheduleAtFixedRate(autoshutdownTask, time[i].getTime(), config.getInt("warning", 5) * 60000);
-                time[i].add(Calendar.MINUTE, config.getInt("warning", 5));
-                ConsoleUtils.printInfo(NAME, String.format("Shutdown at %s.", time[i].getTime()));
-                return true;
-            }
-        }
-        time[0].add(Calendar.DAY_OF_YEAR, 1);
-        timer.scheduleAtFixedRate(autoshutdownTask, time[0].getTime(), config.getInt("warning", 5) * 60000);
-        time[0].add(Calendar.MINUTE, config.getInt("warning", 5));
+        timer.scheduleAtFixedRate(autoshutdownTask, getNextShutdownTime(), config.getInt("warning", 5) * 60000);
         return true;
     }
 
@@ -103,5 +76,36 @@ public class Core extends AbstractCore {
             }
         }
         return errorFree;
+    }
+
+    public Date getNextShutdownTime() {
+        Calendar now = Calendar.getInstance();
+        SimpleDateFormat sdf;
+        Calendar[] time = new Calendar[3];
+        for (int i = 1; i <= 3; i++) {
+            String tmp = config.getString("downtime" + i, "00:00");
+            try {
+                sdf = new SimpleDateFormat("hh:mm");
+                sdf.parse(tmp);
+                time[i - 1] = sdf.getCalendar();
+                time[i - 1].set(Calendar.YEAR, now.get(Calendar.YEAR));
+                time[i - 1].set(Calendar.DAY_OF_YEAR, now.get(Calendar.DAY_OF_YEAR));
+            } catch (ParseException e) {
+                ConsoleUtils.printException(e, NAME, "Unable to parse Time");
+            }
+        }
+        Arrays.sort(time);
+        now.add(Calendar.MINUTE, config.getInt("warning", 5));
+        for (int i = 0; i < 3; i++) {
+            if (time[i].after(now)) {
+                ConsoleUtils.printInfo(NAME, String.format("Shutdown at %s.", time[i].getTime()));
+                time[i].add(Calendar.MINUTE, -config.getInt("warning", 5));
+                return time[i].getTime();
+            }
+        }
+        time[0].add(Calendar.DAY_OF_YEAR, 1);
+        ConsoleUtils.printInfo(NAME, String.format("Shutdown at %s.", time[0].getTime()));
+        time[0].add(Calendar.MINUTE, -config.getInt("warning", 5));
+        return time[0].getTime();
     }
 }
